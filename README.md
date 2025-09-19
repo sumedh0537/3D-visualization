@@ -24,7 +24,7 @@ Follow these steps to run the project locally:
 git clone https://github.com/sumedh0537/3D_visualization.git
 
 # 2. Navigate to the project directory
-cd 3D_visualization
+cd 3D-visualization
 
 # 3. Install dependencies
 npm install
