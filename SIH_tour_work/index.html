@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <title>Straight-Line 360° Tour — Floor Buttons</title>
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <style>
+    .hint {
+      position: fixed;
+      left: 12px;
+      bottom: 12px;
+      padding: 8px 10px;
+      background: rgba(0, 0, 0, 0.6);
+      color: white;
+      font-family: sans-serif;
+      font-size: 13px;
+      border-radius: 6px;
+      z-index: 999;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="hint">Look at a circle on the floor and click (or use ← / →)</div>
+
+  <a-scene>
+    <!-- Camera rig -->
+    <a-entity id="cameraRig" position="0 0 0">
+      <a-entity id="camera" camera position="0 1.6 0" look-controls>
+        <!-- Cursor: mouse + gaze -->
+        <a-entity cursor="rayOrigin: mouse; fuse: true; fuseTimeout: 1000" raycaster="objects: .clickable"
+          position="0 0 -1" geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
+          material="color: white; shader: flat">
+        </a-entity>
+      </a-entity>
+    </a-entity>
+
+    <!-- Sky (panorama) -->
+    <a-entity id="skyWrapper">
+      <a-sky id="sky" src="images/1.jpg" material="shader: flat; opacity: 1"></a-sky>
+    </a-entity>
+
+    <!-- Hotspots container -->
+    <a-entity id="hotspots"></a-entity>
+
+  </a-scene>
+
+  <script>
+    // === Your sequential panoramic images (1,2,3 ...) ===
+    const images = [
+      "images/1.jpg",
+      "images/2.jpg",
+      "images/3.jpg"
+    ];
+
+    let currentIndex = 0;
+    const sky = document.getElementById("sky");
+    const hotspotsContainer = document.getElementById("hotspots");
+
+    function clampIndex(i) {
+      return Math.max(0, Math.min(images.length - 1, i));
+    }
+
+    function loadView(index) {
+      index = clampIndex(index);
+      if (index === currentIndex) return;
+
+      // Fade out
+      sky.setAttribute("animation__fadeout", {
+        property: "material.opacity",
+        to: 0,
+        dur: 400,
+        easing: "easeInOutQuad"
+      });
+
+      // After fade, switch image and fade back in
+      setTimeout(() => {
+        sky.setAttribute("src", images[index]);
+        sky.setAttribute("animation__fadein", {
+          property: "material.opacity",
+          to: 1,
+          dur: 400,
+          easing: "easeInOutQuad"
+        });
+      }, 420);
+
+      currentIndex = index;
+      renderHotspots();
+    }
+
+    // Hotspots: forward = LEFT floor, backward = RIGHT floor
+    function renderHotspots() {
+      hotspotsContainer.innerHTML = "";
+
+      // Place them directly left/right of user on the floor
+      const forwardPos = "-2.5 0.2 0";   // left side
+      const backwardPos = "2.5 0.2 0";   // right side
+
+      const radius = 0.35;
+
+      // FORWARD (Next) — left floor
+      if (currentIndex < images.length - 1) {
+        const forward = document.createElement("a-circle");
+        forward.setAttribute("position", forwardPos);
+        forward.setAttribute("rotation", "-90 0 0"); // flat on floor
+        forward.setAttribute("radius", radius.toString());
+        forward.setAttribute("material", "side: double; color: #2ecc71; opacity: 0.95");
+        forward.setAttribute("class", "clickable");
+        forward.addEventListener("click", () => loadView(currentIndex + 1));
+        hotspotsContainer.appendChild(forward);
+
+        const forwardRing = document.createElement("a-ring");
+        forwardRing.setAttribute("position", forwardPos);
+        forwardRing.setAttribute("rotation", "-90 0 0");
+        forwardRing.setAttribute("radius-inner", (radius + 0.05).toString());
+        forwardRing.setAttribute("radius-outer", (radius + 0.12).toString());
+        forwardRing.setAttribute("material", "side: double; color: #0b6d30; opacity: 0.6");
+        forwardRing.setAttribute("class", "clickable");
+        forwardRing.addEventListener("click", () => loadView(currentIndex + 1));
+        hotspotsContainer.appendChild(forwardRing);
+
+        const ftext = document.createElement("a-text");
+        ftext.setAttribute("value", "Next");
+        ftext.setAttribute("position", "-2.5 0.4 0");
+        ftext.setAttribute("rotation", "-90 0 0");
+        ftext.setAttribute("align", "center");
+        ftext.setAttribute("side", "double");
+        ftext.setAttribute("width", "2");
+        hotspotsContainer.appendChild(ftext);
+      }
+
+      // BACKWARD (Previous) — right floor
+      if (currentIndex > 0) {
+        const back = document.createElement("a-circle");
+        back.setAttribute("position", backwardPos);
+        back.setAttribute("rotation", "-90 0 0");
+        back.setAttribute("radius", radius.toString());
+        back.setAttribute("material", "side: double; color: #3498db; opacity: 0.95");
+        back.setAttribute("class", "clickable");
+        back.addEventListener("click", () => loadView(currentIndex - 1));
+        hotspotsContainer.appendChild(back);
+
+        const backRing = document.createElement("a-ring");
+        backRing.setAttribute("position", backwardPos);
+        backRing.setAttribute("rotation", "-90 0 0");
+        backRing.setAttribute("radius-inner", (radius + 0.05).toString());
+        backRing.setAttribute("radius-outer", (radius + 0.12).toString());
+        backRing.setAttribute("material", "side: double; color: #1b4f7a; opacity: 0.6");
+        backRing.setAttribute("class", "clickable");
+        backRing.addEventListener("click", () => loadView(currentIndex - 1));
+        hotspotsContainer.appendChild(backRing);
+
+        const btext = document.createElement("a-text");
+        btext.setAttribute("value", "Previous");
+        btext.setAttribute("position", "2.5 0.4 0");
+        btext.setAttribute("rotation", "-90 0 0");
+        btext.setAttribute("align", "center");
+        btext.setAttribute("side", "double");
+        btext.setAttribute("width", "2");
+        hotspotsContainer.appendChild(btext);
+      }
+    }
+
+    // Keyboard navigation — Right = next, Left = prev
+    document.addEventListener("keydown", (ev) => {
+      if (ev.key === "ArrowRight") {
+        loadView(currentIndex + 1);
+      } else if (ev.key === "ArrowLeft") {
+        loadView(currentIndex - 1);
+      }
+    });
+
+    // Initialize
+    sky.setAttribute("src", images[0]);
+    renderHotspots();
+  </script>
+
+</body>
+
+</html>
