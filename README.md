@@ -21,7 +21,7 @@ Follow these steps to run the project locally:
 
 ```sh
 # 1. Clone the repository
-git clone https://github.com/sumedh0537/3D_visualization.git
+git clone https://github.com/sumedh0537/3D-visualization.git
 
 # 2. Navigate to the project directory
 cd 3D-visualization
